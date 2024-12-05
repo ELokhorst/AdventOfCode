@@ -13,18 +13,31 @@ def verify_order(ordering: list, ruleset: defaultdict[int, list]):
     return ordering[len(ordering) // 2]
 
 
-def restructure_order(ordering: list, rules: list):
+def restructure_order(ordering: list, ruleset: defaultdict[int, list]):
     reordered_list = []
-    added = set()
 
-    for item in rules:
-        if item in ordering and item not in added:
-            reordered_list.append(item)
-            added.add(item)
+    for number in ordering:
+        print(f"Starting number: {number}")
+        current_val = number
+        rules = ruleset[number]
 
-    for item in ordering:
-        if item not in added:
-            reordered_list.append(item)
+        while len(rules) > 0:
+            i = 0
+            while (
+                i < len(rules)
+                and rules[i] in ordering
+                and rules[i] not in reordered_list
+            ):
+                print(rules[i])
+                current_val = rules[i]
+                rules = ruleset[rules[i]]
+                print(f"{current_val}: {rules}")
+                i += 1
+
+            if current_val not in reordered_list and current_val > 0:
+                reordered_list.insert(0, current_val)
+                print(f"List: {reordered_list}")
+            break
 
     return reordered_list
 
@@ -46,6 +59,7 @@ def main(file: str):
         order for order in orderings if verify_order(order, agg_rules) == 0
     ]
 
+    print(agg_rules)
     corrected = [restructure_order(order, agg_rules) for order in wrong_orderings]
     result = sum([verify_order(order, agg_rules) for order in corrected])
 
@@ -54,5 +68,5 @@ def main(file: str):
 
 res_example = main("2024/day05_example.txt")
 print(res_example)
-res_actual = main("2024/day05_input.txt")
-print(res_actual)
+# res_actual = main("2024/day05_input.txt")
+# print(res_actual)
