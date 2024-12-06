@@ -103,7 +103,7 @@ def walkthrough(coords, objects):
             break
 
         if guard_pos in guard_positions:
-            print(f"Found loop for {guard_pos} in {guard_positions}")
+            # print(f"Found loop for {guard_pos} in {guard_positions}")
             loop = True
             break
 
@@ -123,6 +123,8 @@ def main(file: str):
 
     loop = 0
     for coord, token in coords_token:
+        if coord[0] % 50 == 0:
+            print(f"Working on {coord}")
         if not token == ".":
             continue
         # print(f"Creating object at: {coord}")
