@@ -2,36 +2,33 @@ import itertools
 
 
 def apply_operators(values, operators):
-    operator_map = {
-        0: lambda x, y: x + y,
-        1: lambda x, y: x * y,
-        2: lambda x, y: int(str(x) + str(y)),
-    }
     result = values[0]
     for i, op in enumerate(operators):
-        fn = operator_map[op]
-        result = fn(result, values[i + 1])
+        if op == 0:
+            result += values[i + 1]
+        elif op == 1:
+            result *= values[i + 1]
+        elif op == 2:
+            result = int(str(result) + str(values[i + 1]))
     return result
 
 
 def main(file: str):
     with open(file, "r", encoding="utf-8") as f:
-        lines = f.read().split("\n")
+        lines = f.read().strip().split("\n")
 
-    totals = 0
-    equations = [line.split(": ") for line in lines]  # ['156', '11 17 18']
-    operators = [0, 1, 2]
-    for equation in equations:
-        answer = int(equation[0])  # 156
-        equation = list(map(int, equation[1].split(" ")))  # [11, 17, 18]
-        combinations = itertools.product(operators, repeat=len(equation) - 1)
-        for c in combinations:
-            result = apply_operators(equation, c)
-            if result == answer:
-                totals += answer
+    total_sum = 0
+    for line in lines:
+        answer, equation = int(line.split(": ")[0]), list(
+            map(int, line.split(": ")[1].split())
+        )
+
+        for operators in itertools.product(range(3), repeat=len(equation) - 1):
+            if apply_operators(equation, operators) == answer:
+                total_sum += answer
                 break
 
-    return totals
+    return total_sum
 
 
 res_example = main("2024/day07_example.txt")
