@@ -1,63 +1,41 @@
 def read_patterns(file: str):
     with open(file, "r", encoding="utf-8") as file:
-        content = file.read()
+        puzzles = file.read().split("\n\n")
 
-    horizontal_patterns = []
-    raw_patterns = content.split("\n\n")
-    for raw_pattern in raw_patterns:
-        lines = raw_pattern.strip().split("\n")
-        if lines:
-            horizontal_patterns.append(lines)
+    horizontal_patterns = [
+        [line.strip() for line in puzzle.splitlines()] for puzzle in puzzles
+    ]
 
-    vertical_patterns = [[] for _ in range(len(horizontal_patterns))]
-    for i, h_pattern in enumerate(horizontal_patterns):
-        pattern_size = len(h_pattern[0])
-        v_pattern = []
-        for j in range(pattern_size):
-            column = "".join([row[j] for row in h_pattern])
-            v_pattern.append(column)
-        vertical_patterns[i] = v_pattern
+    vertical_patterns = [
+        ["".join(row[j] for row in h_pattern) for j in range(len(h_pattern[0]))]
+        for h_pattern in horizontal_patterns
+    ]
 
     return horizontal_patterns, vertical_patterns
 
 
-def check_mirror_idx(pattern: list[str], idx: int) -> int:
-    print(f"Checking for mirror index: {idx} / {len(pattern)}")
+def check_mirror(pattern: list[str]) -> int:
     i = 0
+    for idx, row in enumerate(pattern[:-1]):
+        if row == pattern[idx + 1]:
+            while True:
+                left_index = idx - i
+                right_index = idx + i + 1
 
-    while True:
-        left_index = idx - i
-        right_index = idx + i + 1
+                if left_index < 0 or right_index >= len(pattern):
+                    print(
+                        f"Reached {'left' if left_index < 0 else 'right'} boundary for index: {idx}"
+                    )
+                    return idx + 1
 
-        if left_index < 0 or right_index >= len(pattern):
-            print(
-                f"Reached {'left' if left_index < 0 else 'right'} boundary for index: {idx}"
-            )
-            return idx + 1
+                if pattern[left_index] != pattern[right_index]:
+                    print(
+                        f"Mismatch at left_index: {left_index} and right_index: {right_index}"
+                    )
+                    break
 
-        if pattern[left_index] != pattern[right_index]:
-            print(pattern[left_index])
-            print(pattern[right_index])
-            print(
-                f"Mismatch at left_index: {left_index} and right_index: {right_index}"
-            )
-            return 0
-
-        i += 1
-
-
-def find_mirroring(pattern: list[str]) -> int:
-    is_even = len(pattern) % 2 == 0
-    print(f"Even pattern: {is_even}")
-    mirror_index = len(pattern) // 2 - 1
-    check = check_mirror_idx(pattern, mirror_index)
-    if check:
-        return check
-
-    if not is_even:
-        mirror_index = len(pattern) // 2
-        check = check_mirror_idx(pattern, mirror_index)
-    return check
+                i += 1
+    return 0
 
 
 def summarize_notes(file: str) -> int:
@@ -65,16 +43,12 @@ def summarize_notes(file: str) -> int:
 
     totals = 0
     for h_p in h:
-        print("Horizontal pattern")
-        [print(line) for line in h_p]
-        mirror_h = find_mirroring(h_p)
+        mirror_h = check_mirror(h_p)
         print(f"Adding {100 * mirror_h}")
         totals += 100 * mirror_h
 
     for v_p in v:
-        print("Vertical pattern")
-        [print(line) for line in v_p]
-        mirror_v = find_mirroring(v_p)
+        mirror_v = check_mirror(v_p)
         print(f"Adding {mirror_v}")
         totals += mirror_v
 
