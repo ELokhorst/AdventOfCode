@@ -1,37 +1,26 @@
 from itertools import combinations
 
 
-def calc_top_coords(comb, i):
-    return (
-        comb[0][0] - (comb[1][0] - comb[0][0]) * i,
-        comb[0][1] + (comb[0][1] - comb[1][1]) * i,
-    )
-
-
-def calc_bot_coords(comb, i):
-    return (
-        comb[1][0] + (comb[1][0] - comb[0][0]) * i,
-        comb[1][1] - (comb[0][1] - comb[1][1]) * i,
-    )
-
-
 def calculate_new_coordinates(comb, max_x, max_y):
     """Calculate new coordinates based on the given combination."""
-    new_coords = []
-    i = 1
-    new_coords.append(calc_bot_coords(comb, i))
-    while max_x >= new_coords[-1][0] >= 0 and max_y >= new_coords[-1][1] >= 0:
-        i += 1
-        new_coords.append(calc_bot_coords(comb, i))
 
-    i = 1
-    new_coords.append(calc_top_coords(comb, i))
-    while max_x >= new_coords[-1][0] >= 0 and max_y >= new_coords[-1][1] >= 0:
-        i += 1
-        new_coords.append(calc_top_coords(comb, i))
+    def calculate_coords(base, other, max_x, max_y):
+        """Calculate a series of coordinates in the specified direction."""
+        coords = []
+        i = 1
+        while True:
+            x = base[0] + (base[0] - other[0]) * i
+            y = base[1] + (base[1] - other[1]) * i
+            if not (0 <= x <= max_x and 0 <= y <= max_y):
+                break
+            coords.append((x, y))
+            i += 1
+        return coords
 
-    new_coords.extend([cd for cd in comb])
-    return new_coords
+    bottom_coords = calculate_coords(comb[1], comb[0], max_x, max_y)
+    top_coords = calculate_coords(comb[0], comb[1], max_x, max_y)
+
+    return bottom_coords + top_coords + list(comb)
 
 
 def main(file: str):
