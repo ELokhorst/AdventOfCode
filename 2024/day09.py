@@ -2,24 +2,19 @@ def main(file: str):
     with open(file, "r", encoding="utf-8") as f:
         disk = f.read().strip()
 
-    files_list = []
     num = 0
-    for i, size in enumerate(map(int, disk)):
-        if i % 2 == 0:  # file
-            files_list.append(size * [num])
-            num += 1
-        else:  # free space
-            files_list.append(size * [-1])
+    files_list = [
+        size * ([num] if i % 2 == 0 else [-1])
+        for i, size in enumerate(map(int, disk))
+        if not (i % 2) or (num := num + 1)
+    ]
 
-    for file in files_list[::-1][:-1][::2]:
+    for file in reversed(files_list[2::2]):
         suitable_space = None
-        free = [(i, l) for i, l in enumerate(files_list) if any(val == -1 for val in l)]
-        for index, empty_list in free:
-            if len(file) <= empty_list.count(-1):
-                suitable_space = (index, empty_list)
-                break
+        free = [(i, l) for i, l in enumerate(files_list) if len(file) <= l.count(-1)]
 
-        if suitable_space:
+        if free:
+            suitable_space = free[0]
             index_start = suitable_space[1].index(-1)
             suitable_space[1][index_start : index_start + len(file)] = file
             files_list[suitable_space[0]] = suitable_space[1]
