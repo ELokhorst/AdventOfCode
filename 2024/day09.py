@@ -27,7 +27,7 @@ def main(file: str):
                 remaining_space,
             )
             files_list.remove(file)
-            new_order.insert(index + 1, file)
+            new_order.insert(suitable_space[0] + 1, file)
         else:
             stack.append(file)
         print(new_order)
