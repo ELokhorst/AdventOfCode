@@ -1,31 +1,36 @@
+from collections import Counter
+
+
 def main(file: str):
     with open(file, "r", encoding="utf-8") as f:
         disk = f.read().strip()
 
     files = [(id, size) for id, size in enumerate(map(int, disk[::2]))]
     free = list(map(int, disk[1::2]))
-    file_string = [file[1] * str(file[0]) for file in files]
-    print(file_string)
+    files_list = [int(x) for file in files for x in file[1] * [file[0]]]
 
-    moved_fb = []
+    new_order = []
     for i, size in enumerate(free):
-        if len(file_string) <= size:
-            while file_string:
-                moved_fb.append(file_string.pop())
+        if len(files_list) > size:
+            new_order.extend(min(files[i][1], len(files_list)) * [files[i][0]])
+            files_list = files_list[files[i][1] :]
 
-        if not file_string:
-            break
-        moved_fb.extend(files[i][1] * str(files[i][0]))
-        file_string = file_string[files[i][1] :]
-        for _ in range(size):
-            if file_string:
-                moved_fb.append(file_string.pop())
+            for _ in range(size):
+                if files_list:
+                    new_order.append(files_list.pop())
+        else:
+            while files_list:
+                new_order.append(files_list.pop())
 
-    checksum = sum([i * int(item) for i, item in enumerate(moved_fb)])
-    return checksum
+    checksum = [i * int(item) for i, item in enumerate(new_order)]
+    return sum(checksum)
 
 
 res_example = main("2024/day09_example.txt")
 print(res_example)
-# res_actual = main("2024/day09_input.txt")
-# print(res_actual)
+res_example = main("2024/day09_example1.txt")
+print(res_example)
+res_example = main("2024/day09_example2.txt")
+print(res_example)
+res_actual = main("2024/day09_input.txt")
+print(res_actual)
