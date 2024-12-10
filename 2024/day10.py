@@ -5,14 +5,13 @@ def traverse(coords: list[tuple], trail: set, current_pos: tuple):
         (current_pos[0], current_pos[1] - 1),
         (current_pos[0], current_pos[1] + 1),
     ]
+
     valid = [
         coord
         for coord in coords
-        for surr_coord in surr_coords
         if coord[2] != "."
-        and coord[0] == surr_coord[0]
-        and coord[1] == surr_coord[1]
         and coord not in trail
+        and (coord[0], coord[1]) in surr_coords
         and int(current_pos[2]) + 1 == int(coord[2])
     ]
 
@@ -22,8 +21,9 @@ def traverse(coords: list[tuple], trail: set, current_pos: tuple):
             valid_ends += 1
         else:
             trail.add(current_pos)
-            current_pos = valid_coord
-            valid_ends += traverse(coords, trail.copy(), current_pos)
+            valid_ends += traverse(coords, trail, valid_coord)
+            trail.remove(current_pos)  # backtrack
+
     return valid_ends
 
 
@@ -32,23 +32,17 @@ def main(file: str):
         maps = f.read().split("\n\n")
 
     total_routes = []
-    for map in maps:
+    for m in maps:
         print("Starting new map")
-        coords = set(
-            [
-                (i, j, height)
-                for i, l in enumerate(map.splitlines())
-                for j, height in enumerate(l)
-            ]
-        )
+        coords = {
+            (i, j, height)
+            for i, line in enumerate(m.splitlines())
+            for j, height in enumerate(line)
+        }
+
         trailheads = [coord for coord in coords if coord[2] == "0"]
-        results = []
-        for trailhead in trailheads:
-            trail = set()
-            current_pos = trailhead
-            score = traverse(coords, trail, current_pos)
-            results.append(score)
-        total_routes.append(sum(results))
+        scores = [traverse(coords, set(), trailhead) for trailhead in trailheads]
+        total_routes.append(sum(scores))
     return total_routes
 
 
