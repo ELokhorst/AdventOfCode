@@ -14,27 +14,35 @@ def read_patterns(file: str):
     return horizontal_patterns, vertical_patterns
 
 
+def get_mm_count(list1, list2):
+    mismatch_count = 0
+    for a, b in zip(list1, list2):
+        if a != b:
+            mismatch_count += 1
+            if mismatch_count > 1:
+                return mismatch_count
+
+    return mismatch_count
+
+
 def check_mirror(pattern: list[str]) -> int:
-    i = 0
-    for idx, row in enumerate(pattern[:-1]):
-        if row == pattern[idx + 1]:
-            while True:
-                left_index = idx - i
-                right_index = idx + i + 1
+    max_mm = 1
+    for idx, _ in enumerate(pattern[:-1]):
+        i = 0
+        mm_count = 0
+        while mm_count <= max_mm:
+            left_index = idx - i
+            right_index = idx + 1 + i
 
-                if left_index < 0 or right_index >= len(pattern):
-                    print(
-                        f"Reached {'left' if left_index < 0 else 'right'} boundary for index: {idx}"
-                    )
-                    return idx + 1
+            # print(f"Checking {left_index}, {right_index}")
+            if left_index < 0 or right_index >= len(pattern):
+                return idx + 1
 
-                if pattern[left_index] != pattern[right_index]:
-                    print(
-                        f"Mismatch at left_index: {left_index} and right_index: {right_index}"
-                    )
-                    break
-
-                i += 1
+            # print(pattern[left_index])
+            # print(pattern[right_index])
+            mm = get_mm_count(pattern[left_index], pattern[right_index])
+            mm_count += mm
+            i += 1
     return 0
 
 
@@ -42,15 +50,14 @@ def summarize_notes(file: str) -> int:
     h, v = read_patterns(file)
 
     totals = 0
-    for h_p in h:
+    for h_p, v_p in zip(h, v):
         mirror_h = check_mirror(h_p)
-        print(f"Adding {100 * mirror_h}")
+        # print(f"Adding {100 * mirror_h}")
         totals += 100 * mirror_h
-
-    for v_p in v:
-        mirror_v = check_mirror(v_p)
-        print(f"Adding {mirror_v}")
-        totals += mirror_v
+        if mirror_h == 0:
+            mirror_v = check_mirror(v_p)
+            # print(f"Adding {mirror_v}")
+            totals += mirror_v
 
     return totals
 
