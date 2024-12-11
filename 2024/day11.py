@@ -27,10 +27,11 @@ def main(file: str):
         stones = f.read().strip().split(" ")
 
     stones = list(map(int, stones))
-    blinks = 75
+    blinks = 6
     stone_piles = {}
     # Credits to https://github.com/ambrosekuo/aoc-2024/blob/main/aoc-python%2Fday11%2Fmain2.py
     # For this efficiency improvement that I needed for part 2
+    # All numbers are accumulated, so each computation only needs to happen once!
     for stone in stones:
         update_stones(stone_piles, stone)
 
@@ -42,7 +43,6 @@ def main(file: str):
             update_stones(new_piles, new_stones[0], count)
             if len(new_stones) == 2:
                 update_stones(new_piles, new_stones[1], count)
-
         stone_piles = new_piles
         current_blink += 1
 
@@ -52,5 +52,5 @@ def main(file: str):
 
 res_example = main("2024/day11_example.txt")
 print(res_example)
-res_actual = main("2024/day11_input.txt")
-print(res_actual)
+# res_actual = main("2024/day11_input.txt")
+# print(res_actual)
