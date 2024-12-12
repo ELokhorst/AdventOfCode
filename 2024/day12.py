@@ -4,7 +4,8 @@ def find_regions(coord_set: set):
 
     while coord_set:
         x, y, char = coord_set.pop()
-        region = [(x, y, char)]
+        region = set()
+        region.add((x, y))
         stack = [(x, y, char)]
 
         while stack:
@@ -14,7 +15,7 @@ def find_regions(coord_set: set):
                 if neighbor in coord_set:
                     coord_set.remove(neighbor)
                     stack.append(neighbor)
-                    region.append(neighbor)
+                    region.add((neighbor[0], neighbor[1]))
 
         regions.append(region)
 
@@ -28,6 +29,55 @@ def count_surrounding_lots(lot, coord):
     return res
 
 
+# Credits to Boojum (reddit) for this solution of counting corners!
+def count_corners(region: set):
+    if len(region) < 3:
+        return 4
+
+    corners = 0
+    for x, y in region:
+        # Outer corners
+        corners += (x - 1, y) not in region and (
+            x,
+            y - 1,
+        ) not in region  # left top corner
+        corners += (x + 1, y) not in region and (
+            x,
+            y - 1,
+        ) not in region  # right top corner
+        corners += (x - 1, y) not in region and (
+            x,
+            y + 1,
+        ) not in region  # left bottom corner
+        corners += (x + 1, y) not in region and (
+            x,
+            y + 1,
+        ) not in region  # right bottom corner
+        # Inner corners
+        corners += (
+            (x - 1, y) in region
+            and (x, y - 1) in region
+            and (x - 1, y - 1) not in region
+        )
+        corners += (
+            (x + 1, y) in region
+            and (x, y - 1) in region
+            and (x + 1, y - 1) not in region
+        )
+        corners += (
+            (x - 1, y) in region
+            and (x, y + 1) in region
+            and (x - 1, y + 1) not in region
+        )
+        corners += (
+            (x + 1, y) in region
+            and (x, y + 1) in region
+            and (x + 1, y + 1) not in region
+        )
+
+    return corners
+
+
 def main(file: str):
     with open(file, "r", encoding="utf-8") as f:
         layout = f.read().strip()
@@ -39,12 +89,14 @@ def main(file: str):
             coords.add((x, y, char))
 
     regions = find_regions(coords)
+    edges = [count_corners(region) for region in regions]
 
     sizes = [len(lots) for lots in regions]
-    perimeters = [
-        sum(count_surrounding_lots(lots, coord) for coord in lots) for lots in regions
-    ]
-    costs = [a * b for a, b in zip(sizes, perimeters)]
+    # perimeters = [
+    #     sum(count_surrounding_lots(lots, coord) for coord in lots) for lots in regions
+    # ]
+    # costs = [a * b for a, b in zip(sizes, perimeters)]
+    costs = [a * b for a, b in zip(sizes, edges)]
     return sum(costs)
 
 
