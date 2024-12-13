@@ -1,28 +1,31 @@
-import numpy as np
+from ortools.sat.python import cp_model
 
 
 def solve_puzzle(puzzle, part2: bool):
     if part2:
-        puzzle[2][0] += 10000000000000
-        puzzle[2][1] += 10000000000000
-    a = np.array([[puzzle[0][0], puzzle[1][0]], [puzzle[0][1], puzzle[1][1]]])
-    b = np.array([puzzle[2][0], puzzle[2][1]])
+        puzzle[2][0] += 10**13
+        puzzle[2][1] += 10**13
 
-    try:
-        det = np.linalg.det(a)
-        if det == 0:
-            if np.linalg.matrix_rank(a) < 2:
-                return "No solution exists (rank deficient)"
-        else:
-            solution = np.linalg.solve(a, b)
-            if all(np.isclose(val, round(val)) for val in solution):
-                solution = tuple(map(int, np.round(solution)))
-            else:
-                return "No integer solution exists for the given puzzle"
-    except Exception as e:
-        return str(e)
+    model = cp_model.CpModel()
 
-    return solution
+    a = model.NewIntVar(0, int(1e15), "a")
+    b = model.NewIntVar(0, int(1e15), "b")
+
+    model.Add(puzzle[0][0] * a + puzzle[1][0] * b == puzzle[2][0])
+    model.Add(puzzle[0][1] * a + puzzle[1][1] * b == puzzle[2][1])
+
+    model.Minimize(3 * a + b)
+
+    solver = cp_model.CpSolver()
+    status = solver.Solve(model)
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        solution = (solver.Value(a), solver.Value(b))
+        return solution
+    elif status == cp_model.INFEASIBLE:
+        return "No solution exists (infeasible)"
+    else:
+        return "Something went wrong"
 
 
 def main(file: str):
@@ -46,7 +49,7 @@ def main(file: str):
 
     tokens = 0
     for puzzle in puzzles:
-        res = solve_puzzle(puzzle, False)
+        res = solve_puzzle(puzzle, True)
         if isinstance(res, tuple):
             tokens += res[0] * 3 + res[1]
     return tokens
