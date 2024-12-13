@@ -1,6 +1,22 @@
 from ortools.sat.python import cp_model
 
 
+def load_puzzle(file):
+    with open(file, "r", encoding="utf-8") as f:
+        puzzles = f.read().strip().split("\n\n")
+
+    return [
+        [
+            [
+                int(item.split("+")[1]) if "+" in item else int(item.split("=")[1])
+                for item in line.split(": ")[1].split(", ")
+            ]
+            for line in puzzle.splitlines()
+        ]
+        for puzzle in puzzles
+    ]
+
+
 def solve_puzzle(puzzle, part2: bool):
     if part2:
         puzzle[2][0] += 10**13
@@ -29,26 +45,8 @@ def solve_puzzle(puzzle, part2: bool):
 
 
 def main(file: str):
-    with open(file, "r", encoding="utf-8") as f:
-        puzzles = f.read().strip().split("\n\n")
-
-    puzzles = [
-        [line.split(": ")[1].split(", ") for line in puzzle.splitlines()]
-        for puzzle in puzzles
-    ]
-    puzzles = [
-        [
-            [
-                int(item.split("+")[1]) if "+" in item else int(item.split("=")[1])
-                for item in sublist
-            ]
-            for sublist in puzzle
-        ]
-        for puzzle in puzzles
-    ]
-
     tokens = 0
-    for puzzle in puzzles:
+    for puzzle in load_puzzle(file):
         res = solve_puzzle(puzzle, True)
         if isinstance(res, tuple):
             tokens += res[0] * 3 + res[1]
