@@ -12,6 +12,7 @@ def read_layout(lines) -> list:
     return coords
 
 
+# Credits to: Neil Thistlethwaite (YouTube)
 def get_adj_coords(coords, current):
     directions = [(0, 1), (-1, 0), (0, -1), (1, 0)]
     cx, cy, current_dir = current
