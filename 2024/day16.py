@@ -1,4 +1,5 @@
 import heapq
+from collections import defaultdict as dd
 
 
 def read_layout(lines) -> list:
@@ -11,32 +12,55 @@ def read_layout(lines) -> list:
     return coords
 
 
-def find_lowest_cost_path(coords: set, start: tuple, end: tuple) -> int:
-    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+def get_adj_coords(coords, current):
+    directions = [(0, 1), (-1, 0), (0, -1), (1, 0)]
+    cx, cy, current_dir = current
+
+    yield 1000, (cx, cy, (current_dir - 1) % 4)
+    yield 1000, (cx, cy, (current_dir + 1) % 4)
+    dx, dy = directions[current_dir]
+    nx, ny = (current[0] + dx, current[1] + dy)
+    if (nx, ny) in coords:
+        yield 1, (nx, ny, current_dir)
+
+
+def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
     pq = []
-    heapq.heappush(pq, (0, start, (1, 0)))
-    visited = set()
+    costs = dd(lambda: float("inf"))
+    from_ = dd(set)
+    best_cost = float("inf")
+
+    heapq.heappush(pq, (0, start))
 
     while pq:
-        cost, current, curr_dir = heapq.heappop(pq)
+        cost, current = heapq.heappop(pq)
+        cx, cy = current[:2]
+        ex, ey = end[:2]
 
-        if current == end:
-            return cost
+        if (cx, cy) == (ex, ey) and cost <= best_cost:
+            best_cost = cost
 
-        if (current, curr_dir) in visited:
-            continue
-        visited.add((current, curr_dir))
+        for added_cost, adj in get_adj_coords(coords, current):
+            if cost + added_cost < costs[adj]:
+                costs[adj] = cost + added_cost
+                heapq.heappush(pq, (costs[adj], adj))
+                from_[adj] = {current}
+            elif cost + added_cost == costs[adj]:
+                from_[adj].add(current)
 
-        for dx, dy in directions:
-            next_pos = (current[0] + dx, current[1] + dy)
+    return best_cost, from_
 
-            if next_pos in coords:
-                next_dir = (dx, dy)
-                turn_cost = 1000 if curr_dir != next_dir else 0
-                new_cost = cost + 1 + turn_cost
-                heapq.heappush(pq, (new_cost, next_pos, next_dir))
 
-    return float("inf")
+def backtrack(parents, end: tuple):
+    stack = [end]
+    visited = set(stack)
+    while stack:
+        node = stack.pop(-1)
+        for parent in parents[node]:
+            if parent not in visited:
+                visited.add(parent)
+                stack.append(parent)
+    return visited
 
 
 def main(file: str):
@@ -44,12 +68,17 @@ def main(file: str):
         lines = f.read().strip().splitlines()
 
     coords = read_layout(lines)
-    start = [(x, y) for x, y, z in coords if z == "S"][0]
-    end = [(x, y) for x, y, z in coords if z == "E"][0]
+    sx, sy = [(x, y) for x, y, z in coords if z == "S"][0]
+    start = (sx, sy, 3)
+    ex, ey = [(x, y) for x, y, z in coords if z == "E"][0]
+    end = (ex, ey, 1)
     coords = set((x, y) for x, y, z in coords if z == "." or z == "E")
 
-    best = find_lowest_cost_path(coords, start, end)
-    return best
+    best, parents = find_lowest_cost_paths(coords, start, end)
+    print(best)
+    visited = backtrack(parents, end)
+    unq = len(set(node[:2] for node in visited))
+    return unq
 
 
 res_example = main("2024/day16_example.txt")
