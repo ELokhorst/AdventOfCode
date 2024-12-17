@@ -27,7 +27,7 @@ def get_adj_coords(coords, current):
 def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
     pq = []
     costs = dd(lambda: float("inf"))
-    from_ = dd(set)
+    parents = dd(set)
     best_cost = float("inf")
 
     heapq.heappush(pq, (0, start))
@@ -44,11 +44,11 @@ def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
             if cost + added_cost < costs[adj]:
                 costs[adj] = cost + added_cost
                 heapq.heappush(pq, (costs[adj], adj))
-                from_[adj] = {current}
+                parents[adj] = {current}
             elif cost + added_cost == costs[adj]:
-                from_[adj].add(current)
+                parents[adj].add(current)
 
-    return best_cost, from_
+    return best_cost, parents
 
 
 def backtrack(parents, end: tuple):
