@@ -18,7 +18,6 @@ def print_grid(grid_dict):
     for (x, y), value in grid_dict.items():
         grid[y][x] = value
 
-    # Print the grid line by line
     for row in grid:
         print("".join(row))
 
@@ -33,7 +32,6 @@ def get_boxes_to_move(coords: dict, instruction: str, robot_pos: tuple):
         x, y = stack[i]
         nx, ny = (x + dx, y + dy)
         cchar = coords[(nx, ny)]
-        # print((nx, ny), cchar)
 
         if cchar == "#":
             return [], (0, 0)
@@ -53,31 +51,27 @@ def main(file: str):
     with open(file, "r", encoding="utf-8") as f:
         content = f.read().strip().split("\n\n")
 
-    coords, instructions = read_layout(content[0].splitlines(), False), list(content[1])
+    coords, instructions = read_layout(content[0].splitlines()), list(content[1])
     robot_pos = [k for k, v in coords.items() if v == "@"][0]
     i = 0
     while i < len(instructions):
         instruction = instructions[i]
-        print(instruction)
-        print(robot_pos)
         boxes2move, (dx, dy) = get_boxes_to_move(coords, instruction, robot_pos)
-        print(boxes2move, dx, dy)
         if boxes2move:
             for x, y in boxes2move[::-1]:
                 coords[x + dx, y + dy] = coords[x, y]
                 coords[x, y] = "."
             robot_pos = (x + dx, y + dy)
-        print_grid(coords)
         i += 1
 
     print_grid(coords)
     result = sum(
-        [100 * coord[1] + coord[0] for coord, val in coords.items() if val == "O"]
+        [100 * coord[1] + coord[0] for coord, val in coords.items() if val == "["]
     )
     return result
 
 
 res_example = main("2024/day15_example.txt")
 print(res_example)
-# res_actual = main("2024/day15_input.txt")
-# print(res_actual)
+res_actual = main("2024/day15_input.txt")
+print(res_actual)
