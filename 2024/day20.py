@@ -1,6 +1,5 @@
 import heapq
 from collections import defaultdict as dd
-import math
 
 
 def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
@@ -15,6 +14,8 @@ def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
     while pq:
         cost, current = heapq.heappop(pq)
         cx, cy = current
+        if (cx, cy) not in costs:
+            costs[(cx, cy)] = 0
 
         if current == end and cost <= best_cost:
             best_cost = cost
@@ -45,25 +46,29 @@ def backtrack(parents, end: tuple):
     return visited
 
 
-def euclidean_distance(coord1, coord2):
-    return math.sqrt((coord2[0] - coord1[0]) ** 2 + (coord2[1] - coord1[1]) ** 2)
+def manhattan_distance(coord1, coord2):
+    return abs(coord2[0] - coord1[0]) + abs(coord2[1] - coord1[1])
 
 
-def find_cheats(coords):
-    coords_set = set(coords)
-    cheats = set()
+def find_cheats(costs: dict):
+    coords = set(costs.keys())
 
+    saves = []
     for x, y in coords:
-        if (x + 2, y) in coords_set and (x + 1, y) not in coords_set:
-            cheats.add((x + 1, y))
-        if (x - 2, y) in coords_set and (x - 1, y) not in coords_set:
-            cheats.add((x - 1, y))
-        if (x, y + 2) in coords_set and (x, y + 1) not in coords_set:
-            cheats.add((x, y + 1))
-        if (x, y - 2) in coords_set and (x, y - 1) not in coords_set:
-            cheats.add((x, y - 1))
+        normal_cost = costs[(x, y)]
+        cheats = set(
+            (point, manhattan_distance((x, y), point))
+            for point in coords
+            if manhattan_distance((x, y), point) == 2
+        )
+        for cheat, distance in cheats:
+            cheat_cost = costs[cheat]
+            if cheat_cost > normal_cost:
+                save = cheat_cost - (normal_cost + distance)
+                if save > 0:
+                    saves.append(save)
 
-    return cheats
+    return saves
 
 
 def main(file: str):
@@ -76,23 +81,15 @@ def main(file: str):
         next(pos for pos, c in positions.items() if c == "S"),
         next(pos for pos, c in positions.items() if c == "E"),
     )
-    normal_cost, parents, costs = find_lowest_cost_paths(coords, start, end)
-    print(costs)
-    path = backtrack(parents, end)
-    pts = find_cheats(path)
+    _, _, costs = find_lowest_cost_paths(coords, start, end)
+    costs = dict(costs)
+    saves = find_cheats(costs)
 
-    cheat_cost = []
-    for pos2add in pts:
-        coords.add(pos2add)
-        cost, _, _ = find_lowest_cost_paths(coords, start, end)
-        cheat_cost.append(normal_cost - cost)
-        coords.remove(pos2add)
-
-    print(sum([1 for num in cheat_cost if num >= 100]))
-    return cheat_cost
+    print(sum([1 for num in saves if num >= 100]))
+    return saves
 
 
 res_example = main("2024/day20_example.txt")
 print(res_example)
-# res_actual = main("2024/day20_input.txt")
-# print(res_actual)
+res_actual = main("2024/day20_input.txt")
+print(res_actual)
