@@ -6,8 +6,7 @@ def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
     directions = [(0, 1), (-1, 0), (0, -1), (1, 0)]
     pq = []
     costs = dd(lambda: float("inf"))
-    parents = dd(set)
-    best_cost = float("inf")
+    costs[start] = 0
 
     heapq.heappush(pq, (0, start))
 
@@ -17,8 +16,8 @@ def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
         if (cx, cy) not in costs:
             costs[(cx, cy)] = 0
 
-        if current == end and cost <= best_cost:
-            best_cost = cost
+        if current == end:
+            break
 
         for dx, dy in directions:
             nx, ny = (cx + dx, cy + dy)
@@ -27,23 +26,8 @@ def find_lowest_cost_paths(coords: set, start: tuple, end: tuple) -> list:
                 if cost + 1 <= costs[(nx, ny)]:
                     costs[(nx, ny)] = cost + 1
                     heapq.heappush(pq, (costs[(nx, ny)], (nx, ny)))
-                    parents[(nx, ny)] = {current}
-                elif cost + 1 == costs[(nx, ny)]:
-                    parents[(nx, ny)].add(current)
 
-    return best_cost, parents, costs
-
-
-def backtrack(parents, end: tuple):
-    stack = [end]
-    visited = set(stack)
-    while stack:
-        node = stack.pop(-1)
-        for parent in parents[node]:
-            if parent not in visited:
-                visited.add(parent)
-                stack.append(parent)
-    return visited
+    return dict(costs)
 
 
 def manhattan_distance(coord1, coord2):
@@ -59,7 +43,7 @@ def find_cheats(costs: dict):
         cheats = set(
             (point, manhattan_distance((x, y), point))
             for point in coords
-            if manhattan_distance((x, y), point) == 2
+            if 2 <= manhattan_distance((x, y), point) <= 20
         )
         for cheat, distance in cheats:
             cheat_cost = costs[cheat]
@@ -81,12 +65,10 @@ def main(file: str):
         next(pos for pos, c in positions.items() if c == "S"),
         next(pos for pos, c in positions.items() if c == "E"),
     )
-    _, _, costs = find_lowest_cost_paths(coords, start, end)
-    costs = dict(costs)
+    costs = find_lowest_cost_paths(coords, start, end)
     saves = find_cheats(costs)
-
-    print(sum([1 for num in saves if num >= 100]))
-    return saves
+    result = sum([1 for num in saves if num >= 100])
+    return result
 
 
 res_example = main("2024/day20_example.txt")
