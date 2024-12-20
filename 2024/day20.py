@@ -39,16 +39,14 @@ def find_cheats(costs: dict):
 
     saves = []
     for x, y in coords:
-        normal_cost = costs[(x, y)]
         cheats = set(
             (point, manhattan_distance((x, y), point))
             for point in coords
             if 2 <= manhattan_distance((x, y), point) <= 20
         )
         for cheat, distance in cheats:
-            cheat_cost = costs[cheat]
-            if cheat_cost > normal_cost:
-                save = cheat_cost - (normal_cost + distance)
+            if costs[cheat] > costs[(x, y)]:
+                save = costs[cheat] - (costs[(x, y)] + distance)
                 if save > 0:
                     saves.append(save)
 
