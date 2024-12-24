@@ -1,15 +1,12 @@
-def main(file: str):
-    with open(file, "r", encoding="utf-8") as f:
-        content = f.read().strip().split("\n\n")
-
-    states = {
-        k: int(v) for line in content[0].splitlines() for k, v in [line.split(": ")]
-    }
-    rules = [
+def get_rules(content: list[str]):
+    return [
         [item[1], item[0], item[2], item[4]]
         for line in content[1].splitlines()
         for item in [line.split()]
     ]
+
+
+def compute_bits(states: dict[str, int], rules: list):
     for rule in rules:
         if rule[-1].startswith("z"):
             states[rule[-1]] = -1
@@ -34,7 +31,20 @@ def main(file: str):
     output_bits = "".join(
         [str(v) for k, v in sorted(states.items()) if k.startswith("z")][::-1]
     )
-    return states, int(output_bits, 2)
+    return int(output_bits, 2)
+
+
+def main(file: str):
+    with open(file, "r", encoding="utf-8") as f:
+        content = f.read().strip().split("\n\n")
+
+    states = {
+        k: int(v) for line in content[0].splitlines() for k, v in [line.split(": ")]
+    }
+    rules = get_rules(content)
+    output = compute_bits(states, rules)
+
+    return output
 
 
 res_example = main("2024/day24_example.txt")
