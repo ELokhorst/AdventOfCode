@@ -1,31 +1,25 @@
 from collections import defaultdict as dd
+from itertools import combinations
 
 
-def find_cycles(nodes: set, graph: set):
-    cycles = set()
-    visited = set()
+def bron_kerbosch(r, p, x, graph, cliques):
+    if not p and not x:
+        cliques.add(tuple(sorted(r)))  # Found a maximal clique
+        return
 
-    def dfs(node, parent, path: list):
-        if len(path) >= 3:
-            return
-        path.append(node)
-        for neighbor in graph[node]:
-            if neighbor == parent:
-                continue
-            if neighbor in path:
-                cycle_start_index = path.index(neighbor)
-                cycle = tuple(sorted(path[cycle_start_index:]))
-                cycles.add(cycle)
-                continue
-            if neighbor not in visited:
-                dfs(neighbor, node, path)
-        path.pop()
+    for vertex in list(p):
+        new_r = r.union({vertex})
+        new_p = p.intersection(graph[vertex])
+        new_x = x.intersection(graph[vertex])
+        bron_kerbosch(new_r, new_p, new_x, graph, cliques)
+        p.remove(vertex)
+        x.add(vertex)
 
-    for node in nodes:
-        dfs(node, None, [])
-        visited.add(node)
 
-    return [list(cycle) for cycle in cycles]
+def find_maximal_cliques(graph):
+    cliques = set()
+    bron_kerbosch(set(), set(graph.keys()), set(), graph, cliques)
+    return cliques
 
 
 def main(file: str):
@@ -33,16 +27,25 @@ def main(file: str):
         lines = f.read().strip().splitlines()
 
     connections = [line.split("-") for line in lines]
-    computers = set(
-        pc for connection in connections for pc in connection if pc.startswith("t")
-    )
     graph = dd(set)
     for pc1, pc2 in connections:
         graph[pc1].add(pc2)
         graph[pc2].add(pc1)
 
-    groups = find_cycles(computers, graph)
-    return len(groups)
+    cycles = find_maximal_cliques(graph)  # part 2
+
+    visited = set()
+    part1 = 0
+    for cycle in cycles:
+        if len(cycle) >= 3:
+            for comb in combinations(cycle, 3):
+                if any(c.startswith("t") for c in comb) and comb not in visited:
+                    part1 += 1
+                    visited.add(comb)
+    print(part1)
+
+    result = ",".join(sorted(max(cycles, key=len)))
+    return result
 
 
 res_example = main("2024/day23_example.txt")
