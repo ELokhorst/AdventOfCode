@@ -1,6 +1,5 @@
 from re import findall
 from collections import deque
-from itertools import product
 
 
 def all_shortest_paths(grid, start, goal):
@@ -49,29 +48,50 @@ def initialize_keypad(dir_kp=False):
     return keypad
 
 
-def press_numeric_keypad(coords):
-    instr = ""
+def press_keypad(coords):
+    instructions = []
+
     for i in range(len(coords) - 1):
         dx, dy = coords[i + 1][0] - coords[i][0], coords[i + 1][1] - coords[i][1]
-        instr += "<" if dx < 0 else ">" if dx > 0 else ""
-        instr += "^" if dy < 0 else "v" if dy > 0 else ""
-    instr += "A"
-    return instr
+
+        if dx < 0:
+            instructions.append("<")
+        elif dx > 0:
+            instructions.append(">")
+
+        if dy < 0:
+            instructions.append("^")
+        elif dy > 0:
+            instructions.append("v")
+
+    instructions.append("A")
+    return "".join(instructions)
 
 
-def walk_path(keypad: dict, path: list[str], start: str):
-    grid = [val for val in keypad.values()]
+def walk_path(keypad: dict, path: list[list[str]], start: str, cache: dict):
+    grid = [keypad[k] for k in keypad]
     paths = []
-    for p in path:
-        shortest = all_shortest_paths(grid, keypad[start], keypad[p])
-        paths.append([press_numeric_keypad(path) for path in shortest])
-        start = p
 
-    combinations = product(*paths)
-    paths = ["".join(combo) for combo in combinations]
-    min_len = min(map(len, paths))
-    shortest_paths = [path for path in paths if len(path) == min_len]
-    return shortest_paths
+    print(f"In: {path}")
+    for options in path:
+        current = start
+        print(f"Options: {options}")
+        for instruction in options:
+            if instruction not in cache:
+                cache[instruction] = []
+                for next_point in instruction:
+                    shortest = all_shortest_paths(
+                        grid, keypad[current], keypad[next_point]
+                    )
+                    cache[instruction] = cache[instruction] + [
+                        press_keypad(path) for path in shortest
+                    ]
+                    current = next_point
+            print(cache[instruction])
+            print(cache)
+            paths.append(cache[instruction])
+    print(f"Out: {paths}")
+    return paths
 
 
 def main(file: str):
@@ -82,17 +102,19 @@ def main(file: str):
     keypad_coords = initialize_keypad()
     dirpad_coords = initialize_keypad(dir_kp=True)
 
+    cache = {}
     start = "A"
     instructions: dict[str, list] = {}
     for code in numeric_codes:
-        paths = walk_path(keypad_coords, code, start)
+        path = walk_path(keypad_coords, [code], start, cache)
 
-        for _ in range(2):
-            next_paths = []
-            for path in paths:
-                next_paths.extend(walk_path(dirpad_coords, path, start))
-            paths = next_paths
-        instructions[code] = min(paths, key=len)
+        for i in range(2):
+            print(i)
+            shortest_path = walk_path(dirpad_coords, path, start, cache)
+            path = shortest_path
+
+        instructions[code] = path
+        break
 
     print(
         [
@@ -106,5 +128,5 @@ def main(file: str):
 
 res_example = main("2024/day21_example.txt")
 print(res_example)
-res_actual = main("2024/day21_input.txt")
-print(res_actual)
+# res_actual = main("2024/day21_input.txt")
+# print(res_actual)
