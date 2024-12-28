@@ -2,9 +2,9 @@ from collections import defaultdict as dd
 from itertools import combinations
 
 
-def bron_kerbosch(r, p, x, graph, cliques):
+def bron_kerbosch(r: set, p: set[str], x: set, graph: dd[set], cliques: set):
     if not p and not x:
-        cliques.add(tuple(sorted(r)))  # Found a maximal clique
+        cliques.add(tuple(sorted(r)))
         return
 
     for vertex in list(p):
@@ -16,7 +16,7 @@ def bron_kerbosch(r, p, x, graph, cliques):
         x.add(vertex)
 
 
-def find_maximal_cliques(graph):
+def find_maximal_cliques(graph: dd[set]):
     cliques = set()
     bron_kerbosch(set(), set(graph.keys()), set(), graph, cliques)
     return cliques
