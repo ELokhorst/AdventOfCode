@@ -68,30 +68,38 @@ def press_keypad(coords):
     return "".join(instructions)
 
 
-def walk_path(keypad: dict, path: list[list[str]], start: str, cache: dict):
+def walk_path(
+    keypad: dict, path: list[list[str]], start: str, cache: dict, num_pads: int
+):
+    if num_pads == 0:
+        return path
+
     grid = [keypad[k] for k in keypad]
-    paths = []
+    next_path = []
 
     print(f"In: {path}")
     for options in path:
-        current = start
-        print(f"Options: {options}")
+        current_options = []
         for instruction in options:
             if instruction not in cache:
                 cache[instruction] = []
+                instruction_group = []
                 for next_point in instruction:
                     shortest = all_shortest_paths(
-                        grid, keypad[current], keypad[next_point]
+                        grid, keypad[start], keypad[next_point]
                     )
-                    cache[instruction] = cache[instruction] + [
-                        press_keypad(path) for path in shortest
-                    ]
-                    current = next_point
-            print(cache[instruction])
-            print(cache)
-            paths.append(cache[instruction])
-    print(f"Out: {paths}")
-    return paths
+                    instruction_group.extend([press_keypad(p) for p in shortest])
+                cache[instruction] = instruction_group
+            current_options.append(cache[instruction])
+        next_path.append(current_options)
+
+    final_path = []
+    for group in next_path:
+        recursive_result = walk_path(keypad, group, start, cache, num_pads - 1)
+        final_path.extend(recursive_result)
+
+    print(f"Out: {final_path}")
+    return final_path
 
 
 def main(file: str):
@@ -106,12 +114,11 @@ def main(file: str):
     start = "A"
     instructions: dict[str, list] = {}
     for code in numeric_codes:
-        path = walk_path(keypad_coords, [code], start, cache)
+        path = walk_path(keypad_coords, [code], start, cache, 1)
 
-        for i in range(2):
-            print(i)
-            shortest_path = walk_path(dirpad_coords, path, start, cache)
-            path = shortest_path
+        num_pads = 2
+        shortest_path = walk_path(dirpad_coords, path, start, cache, num_pads)
+        path = shortest_path
 
         instructions[code] = path
         break
