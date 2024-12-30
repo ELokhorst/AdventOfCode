@@ -1,35 +1,22 @@
 from re import findall
-from collections import deque
 
 
-def all_shortest_paths(grid, start, goal):
-    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-    visited = {}
-    queue = deque([(start, [start])])
-    shortest_paths = []
-    shortest_length = float("inf")
+def get_shortest_path(grid: dict, start: str, goal: str) -> str:
+    sx, sy = grid[start]
+    gx, gy = grid[goal]
+    _, max_y = max(grid.values())
+    dx = gx - sx
+    dy = gy - sy
 
-    while queue:
-        (x, y), path = queue.popleft()
-
-        if (x, y) == goal:
-            if len(path) < shortest_length:
-                shortest_length = len(path)
-                shortest_paths = [path]
-            elif len(path) == shortest_length:
-                shortest_paths.append(path)
-            continue
-
-        for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-            next_cell = (nx, ny)
-
-            if next_cell in grid:
-                if next_cell not in visited or len(path) + 1 <= shortest_length:
-                    queue.append((next_cell, path + [next_cell]))
-                    visited[next_cell] = len(path) + 1
-
-    return shortest_paths
+    instr = ""
+    if gx == 0 and not gy == 0:
+        instr += abs(dy) * "^" if dy < 0 else dy * "v" if dy > 0 else ""
+        instr += dx * ">" if dx > 0 else abs(dx) * "<" if dx < 0 else ""
+    else:
+        instr += abs(dx) * "<" if dx < 0 else dx * ">" if dx > 0 else ""
+        instr += abs(dy) * "^" if dy < 0 else dy * "v" if dy > 0 else ""
+    instr += "A"
+    return instr
 
 
 def initialize_keypad(dir_kp=False):
@@ -48,58 +35,13 @@ def initialize_keypad(dir_kp=False):
     return keypad
 
 
-def press_keypad(coords):
-    instructions = []
-
-    for i in range(len(coords) - 1):
-        dx, dy = coords[i + 1][0] - coords[i][0], coords[i + 1][1] - coords[i][1]
-
-        if dx < 0:
-            instructions.append("<")
-        elif dx > 0:
-            instructions.append(">")
-
-        if dy < 0:
-            instructions.append("^")
-        elif dy > 0:
-            instructions.append("v")
-
-    instructions.append("A")
-    return "".join(instructions)
-
-
-def walk_path(
-    keypad: dict, path: list[list[str]], start: str, cache: dict, num_pads: int
-):
-    if num_pads == 0:
-        return path
-
-    grid = [keypad[k] for k in keypad]
-    next_path = []
-
-    print(f"In: {path}")
-    for options in path:
-        current_options = []
-        for instruction in options:
-            if instruction not in cache:
-                cache[instruction] = []
-                instruction_group = []
-                for next_point in instruction:
-                    shortest = all_shortest_paths(
-                        grid, keypad[start], keypad[next_point]
-                    )
-                    instruction_group.extend([press_keypad(p) for p in shortest])
-                cache[instruction] = instruction_group
-            current_options.append(cache[instruction])
-        next_path.append(current_options)
-
-    final_path = []
-    for group in next_path:
-        recursive_result = walk_path(keypad, group, start, cache, num_pads - 1)
-        final_path.extend(recursive_result)
-
-    print(f"Out: {final_path}")
-    return final_path
+def walk_path(keypad: dict, path: list[str], start: str):
+    next_path = ""
+    for p in path:
+        shortest = get_shortest_path(keypad, start, p)
+        next_path += shortest
+        start = p
+    return next_path
 
 
 def main(file: str):
@@ -110,18 +52,14 @@ def main(file: str):
     keypad_coords = initialize_keypad()
     dirpad_coords = initialize_keypad(dir_kp=True)
 
-    cache = {}
     start = "A"
     instructions: dict[str, list] = {}
     for code in numeric_codes:
-        path = walk_path(keypad_coords, [code], start, cache, 1)
+        path = walk_path(keypad_coords, code, start)
 
-        num_pads = 2
-        shortest_path = walk_path(dirpad_coords, path, start, cache, num_pads)
-        path = shortest_path
-
+        for _ in range(2):
+            path = walk_path(dirpad_coords, path, start)
         instructions[code] = path
-        break
 
     print(
         [
@@ -135,5 +73,5 @@ def main(file: str):
 
 res_example = main("2024/day21_example.txt")
 print(res_example)
-# res_actual = main("2024/day21_input.txt")
-# print(res_actual)
+res_actual = main("2024/day21_input.txt")
+print(res_actual)
