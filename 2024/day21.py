@@ -1,22 +1,6 @@
 from re import findall
-
-
-def get_shortest_path(grid: dict, start: str, goal: str) -> str:
-    sx, sy = grid[start]
-    gx, gy = grid[goal]
-    _, max_y = max(grid.values())
-    dx = gx - sx
-    dy = gy - sy
-
-    instr = ""
-    if gx == 0 and not gy == 0:
-        instr += abs(dy) * "^" if dy < 0 else dy * "v" if dy > 0 else ""
-        instr += dx * ">" if dx > 0 else abs(dx) * "<" if dx < 0 else ""
-    else:
-        instr += abs(dx) * "<" if dx < 0 else dx * ">" if dx > 0 else ""
-        instr += abs(dy) * "^" if dy < 0 else dy * "v" if dy > 0 else ""
-    instr += "A"
-    return instr
+from collections import deque
+from itertools import product
 
 
 def initialize_keypad(dir_kp=False):
@@ -29,19 +13,89 @@ def initialize_keypad(dir_kp=False):
         keypad[3] = ["X", "0", "A"]
 
     keypad = {
-        str(c): (x, y) for y, line in enumerate(keypad) for x, c in enumerate(line)
+        str(c): (x, y)
+        for y, line in enumerate(keypad)
+        for x, c in enumerate(line)
+        if c != "X"
     }
-    keypad.pop("X")
     return keypad
 
 
-def walk_path(keypad: dict, path: list[str], start: str):
-    next_path = ""
+def get_numeric_path(keypad: dict, path: list[str], start: str):
+    paths = []
     for p in path:
-        shortest = get_shortest_path(keypad, start, p)
-        next_path += shortest
+        paths.append(all_shortest_paths(keypad, start, p))
         start = p
-    return next_path
+
+    combinations = product(*paths)
+    paths = ["".join(combo) for combo in combinations]
+    min_len = min(map(len, paths))
+    shortest_paths = [path for path in paths if len(path) == min_len]
+    return shortest_paths
+
+
+def all_shortest_paths(keypad: dict, start: str, goal: str):
+    grid = [val for val in keypad.values()]
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    start = keypad[start]
+    goal = keypad[goal]
+
+    visited = {}
+    queue = deque([(start, [start])])
+    shortest_paths = []
+    shortest_length = float("inf")
+
+    while queue:
+        (x, y), path = queue.popleft()
+
+        if (x, y) == goal:
+            if len(path) < shortest_length:
+                shortest_length = len(path)
+                shortest_paths = [path]
+            elif len(path) == shortest_length:
+                shortest_paths.append(path)
+            continue
+
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            next_cell = (nx, ny)
+
+            if next_cell in grid:
+                if next_cell not in visited or len(path) + 1 <= shortest_length:
+                    queue.append((next_cell, path + [next_cell]))
+                    visited[next_cell] = len(path) + 1
+
+    shortest_paths = [press_numeric_keypad(path) for path in shortest_paths]
+    return shortest_paths
+
+
+def press_numeric_keypad(coords):
+    directions = {(-1, 0): "<", (1, 0): ">", (0, -1): "^", (0, 1): "v"}
+    instr = ""
+    for (x1, y1), (x2, y2) in zip(coords, coords[1:]):
+        dx, dy = x2 - x1, y2 - y1
+        instr += directions.get((dx, 0), "") + directions.get((0, dy), "")
+    return instr + "A"
+
+
+memo_cache = {}
+
+
+def get_directional_path(keypad: dict, path: list[str], start: str):
+    if path in memo_cache:
+        return memo_cache[path]
+
+    paths = []
+    for p in path:
+        paths.append(all_shortest_paths(keypad, start, p))
+        start = p
+
+    combinations = product(*paths)
+    all_paths = ["".join(combo) for combo in combinations]
+    min_len = min(len(path) for path in all_paths)
+    shortest_paths = [path for path in all_paths if len(path) == min_len]
+    memo_cache[path] = shortest_paths
+    return shortest_paths, min_len
 
 
 def main(file: str):
@@ -49,17 +103,29 @@ def main(file: str):
         numeric_codes = f.read().strip().splitlines()
 
     nums = [int(n) for line in numeric_codes for n in findall(r"(\d+)", line)]
-    keypad_coords = initialize_keypad()
-    dirpad_coords = initialize_keypad(dir_kp=True)
+    keypad = initialize_keypad()
+    dirpad = initialize_keypad(dir_kp=True)
 
     start = "A"
     instructions: dict[str, list] = {}
     for code in numeric_codes:
-        path = walk_path(keypad_coords, code, start)
+        paths = get_numeric_path(keypad, code, start)
 
         for _ in range(2):
-            path = walk_path(dirpad_coords, path, start)
-        instructions[code] = path
+            all_paths = []
+            pl = float("inf")
+            # print(f"Paths: {paths}")
+            for path in paths:
+                shortest_paths, path_length = get_directional_path(dirpad, path, start)
+                if path_length == pl:
+                    all_paths.extend(shortest_paths)
+                elif path_length < pl:
+                    all_paths = shortest_paths
+                    pl = path_length
+                else:
+                    memo_cache[path] = []
+            paths = all_paths
+        instructions[code] = min(paths, key=len)
 
     print(
         [
@@ -73,5 +139,5 @@ def main(file: str):
 
 res_example = main("2024/day21_example.txt")
 print(res_example)
-res_actual = main("2024/day21_input.txt")
-print(res_actual)
+# res_actual = main("2024/day21_input.txt")
+# print(res_actual)
