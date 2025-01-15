@@ -28,12 +28,6 @@ def get_noncorrupted(file: str, part2: bool = False):
     return result
 
 
-res_example = get_noncorrupted("2024/day03_example.txt")
-print(res_example)
-res_actual = get_noncorrupted("2024/day03_input.txt")
-print(res_actual)
-
-
 res_example = get_noncorrupted("2024/day03_example.txt", part2=True)
 print(res_example)
 res_actual = get_noncorrupted("2024/day03_input.txt", part2=True)
